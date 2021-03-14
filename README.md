@@ -14,3 +14,4 @@ You may use this software for any purposes permitted by the attached MIT license
 - 2020.2.5f1
 
 ## Testing dev-kamal branch
+-Testing dev-kamal branch
