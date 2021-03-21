@@ -12,7 +12,7 @@ public class Set_Sonar_Obj_Properties : MonoBehaviour
 {
     // Declare SonarRenderer here;
 
-    SonarRenderer sr = new SonarRenderer();
+    SonarRenderer sr;
 
     // Declare SonarObj 's here
     public SonarObj T; // Short for Terrain;
