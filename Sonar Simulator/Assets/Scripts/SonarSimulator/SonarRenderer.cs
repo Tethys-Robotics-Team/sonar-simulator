@@ -227,7 +227,7 @@ public class SonarRenderer : MonoBehaviour
 					// Calculate the distance of the object from Sonar
 					//
 					//dist = Vector3.Magnitude(transform.position - hit.point);
-					dist = hit.distance;
+					dist = hit.distance; // hit.distance is fine for this
 					dist = (dist / effectiveRange); // Need to add the comment
 
 					Vector3 rayDirection = Vector3.Normalize(transform.position - hit.point);
