@@ -196,7 +196,7 @@ public class SonarRenderer : MonoBehaviour
 			}
 		}
 
-		int samples = Mathf.Max((int) (verticalSampleMultiplier * rangeBins), 1);
+		int samples = Mathf.Max((int)(verticalSampleMultiplier * rangeBins), 1);
 		float degsPerBeam = horizontalFOV / beams;
 		float degsPerSample = verticalFOV / samples;
 
@@ -205,6 +205,10 @@ public class SonarRenderer : MonoBehaviour
 
 		float effectiveRange = maxRange - minRange;
 		float rangePerBin = effectiveRange / rangeBins;
+
+		float intensity; // similar to the intensity from the sensor
+		float absorption_coefficient = 0.0f; // The absorption coefficient of material
+		float dist = 0.0f; // Distance from sonar to the hit point
 
 		for (int b = 0; b < beams; b++)
 		{
@@ -220,11 +224,34 @@ public class SonarRenderer : MonoBehaviour
 					// Sample has echo -> get range bin and store echo
 					int bin = (int)(hit.distance / rangePerBin);
 
-					Vector3 rayDirection = Vector3.Normalize(transform.position - hit.point);
-					float intensity = Mathf.Clamp(Vector3.Dot(rayDirection, hit.normal), 0f, 1f);
+					// Calculate the distance of the object from Sonar
+					//
+					//dist = Vector3.Magnitude(transform.position - hit.point);
+					dist = hit.distance;
+					dist = (dist / effectiveRange); // Need to add the comment
 
-					if (enableNoise)
+					Vector3 rayDirection = Vector3.Normalize(transform.position - hit.point);
+					intensity = Vector3.Dot(rayDirection, hit.normal);
+
+					// Get the Absorption_Coefficient of the material from the raycast
+
+					if (hit.transform.GetComponent<Renderer>() && hit.transform.GetComponent<Renderer>().sharedMaterial) // only if the object has a material and custom shader
 					{
+						// Absorption_Coefficient from the material custom shader
+						absorption_coefficient = hit.transform.GetComponent<Renderer>().sharedMaterial.GetFloat("_Absorption_Coefficient");
+					}
+					else
+					{
+						// Need to write the else condition
+					}
+
+					//intensity = intensity - (absorption_coefficient * dist) - (0.459 * Random.Range(-noiseLevel,noiseLevel));
+					//intensity = Mathf.Clamp(intensity - (absorption_coefficient * dist) +  Random.Range(-.2f,.2f),0f,1f);
+					intensity = intensity - (absorption_coefficient * dist) + Random.Range(-.2f, .2f);
+
+					// This will introduce noise to the image. 
+					if (enableNoise)
+					{   /// check with walter the correct formula
 						intensity = Mathf.Clamp(intensity + Random.Range(-noiseLevel, noiseLevel), 0f, 1f);
 					}
 
@@ -251,7 +278,7 @@ public class SonarRenderer : MonoBehaviour
 			fileName = System.DateTime.Now.ToString("yyyy_MM_dd_hh_mm_ss");
 		}
 
-		
+
 		File.WriteAllBytes(destinationFolder + "/" + fileName + ".jpg", sonarImage.EncodeToJPG());
 
 		if (savePoses)
