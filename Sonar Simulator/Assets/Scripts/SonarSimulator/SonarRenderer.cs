@@ -27,11 +27,11 @@ public class SonarRenderer : MonoBehaviour
 
 
 	[Header("Sonar Configuration")]
-	[Range(1f,360f)]
+	[Range(1f, 360f)]
 	[SerializeField]
 	float horizontalFOV = 60f;
 
-	[Range(0f,90f)]
+	[Range(0f, 90f)]
 	[SerializeField]
 	float verticalFOV = 12f;
 
@@ -73,6 +73,13 @@ public class SonarRenderer : MonoBehaviour
 	[Space(10)]
 	[SerializeField]
 	LayerMask cullingMask = ~0;
+
+
+	[Header("Image settings")]
+	[SerializeField]
+	float B = 10f; // Brightness
+	[SerializeField]
+	float i0 = 200f; //dB
 
 
 	[Header("Pose Axis Mapping")]
@@ -209,6 +216,11 @@ public class SonarRenderer : MonoBehaviour
 		float intensity; // similar to the intensity from the sensor
 		float absorption_coefficient = 0.0f; // The absorption coefficient of material
 		float dist = 0.0f; // Distance from sonar to the hit point
+		float SL = 220f; //dB
+		float AG = 20f; //dB
+		float TS = 25f; //dB
+		float NL = 63f; //dB
+
 
 		for (int b = 0; b < beams; b++)
 		{
@@ -228,10 +240,16 @@ public class SonarRenderer : MonoBehaviour
 					//
 					//dist = Vector3.Magnitude(transform.position - hit.point);
 					dist = hit.distance; // hit.distance is fine for this
-					dist = (dist / effectiveRange); // Need to add the comment
+										 //dist = (dist / effectiveRange); // Need to add the comment
 
 					Vector3 rayDirection = Vector3.Normalize(transform.position - hit.point);
-					intensity = Vector3.Dot(rayDirection, hit.normal);
+					intensity = Vector3.Dot(rayDirection, hit.normal) * SL;
+
+					//intensity by raycast -> dBs 
+					//absorption reduction alpha*dist -> dB 
+
+					//intensity dB -> [0,1] by sigmoid 
+
 
 					// Get the Absorption_Coefficient of the material from the raycast
 
@@ -239,16 +257,13 @@ public class SonarRenderer : MonoBehaviour
 					{
 						// Absorption_Coefficient from the material custom shader
 						absorption_coefficient = hit.transform.GetComponent<Renderer>().sharedMaterial.GetFloat("_Absorption_Coefficient");
-					}
-					else
-					{
-						// Need to write the else condition
-					}
 
-					//intensity = intensity - (absorption_coefficient * dist) - (0.459 * Random.Range(-noiseLevel,noiseLevel));
-					//intensity = Mathf.Clamp(intensity - (absorption_coefficient * dist) +  Random.Range(-.2f,.2f),0f,1f);
-					intensity = intensity - (absorption_coefficient * dist) + Random.Range(-.2f, .2f);
+					}
+					absorption_coefficient = 20 * Mathf.Log(absorption_coefficient, 10);
 
+					intensity = intensity - 2 * (20 * Mathf.Log(dist, 10) + absorption_coefficient * dist) + TS - (NL - AG);
+
+					intensity = 1.0f / (1.0f + Mathf.Exp(-B * (intensity - i0)));
 					// This will introduce noise to the image. 
 					if (enableNoise)
 					{   /// check with walter the correct formula
