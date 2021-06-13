@@ -77,9 +77,9 @@ public class SonarRenderer : MonoBehaviour
 
 	[Header("Image settings")]
 	[SerializeField]
-	float B = 10f; // Brightness
+	float Contrast = 10f; // dB Range Contrast is the beta (tunable parameter)
 	[SerializeField]
-	float i0 = 200f; //dB
+	float Brightness = 200f; //dB Range Brightness 
 
 
 	[Header("Pose Axis Mapping")]
@@ -213,13 +213,16 @@ public class SonarRenderer : MonoBehaviour
 		float effectiveRange = maxRange - minRange;
 		float rangePerBin = effectiveRange / rangeBins;
 
+		Renderer renderer; // Renderer object
+		Material sharedMaterial;
+
 		float intensity; // similar to the intensity from the sensor
 		float absorption_coefficient = 0.0f; // The absorption coefficient of material
-		float dist = 0.0f; // Distance from sonar to the hit point
-		float SL = 220f; //dB
-		float AG = 20f; //dB
-		float TS = 25f; //dB
-		float NL = 63f; //dB
+		float dist = 0.0f; // Distance from sonar to the hit point or target
+		float SL = 220f; // sourceLevel dB
+		float AG = 20f; // ArrayGain dB
+		float TS = 25f; // TargetStrength dB
+		float NL = 63f; // NoiseLevel dB
 
 
 		for (int b = 0; b < beams; b++)
@@ -252,18 +255,20 @@ public class SonarRenderer : MonoBehaviour
 
 
 					// Get the Absorption_Coefficient of the material from the raycast
+					renderer = hit.transform.GetComponent<Renderer>();
+					sharedMaterial = renderer.sharedMaterial;
 
-					if (hit.transform.GetComponent<Renderer>() && hit.transform.GetComponent<Renderer>().sharedMaterial) // only if the object has a material and custom shader
+					if (renderer && sharedMaterial) // only if the object has a material and custom shader
 					{
 						// Absorption_Coefficient from the material custom shader
-						absorption_coefficient = hit.transform.GetComponent<Renderer>().sharedMaterial.GetFloat("_Absorption_Coefficient");
+						absorption_coefficient = sharedMaterial.GetFloat("_Absorption_Coefficient");
 
 					}
-					absorption_coefficient = 20 * Mathf.Log(absorption_coefficient, 10);
+					absorption_coefficient = 20 * Mathf.Log(absorption_coefficient, 10); // converting  absorption_coefficient to dB
 
 					intensity = intensity - 2 * (20 * Mathf.Log(dist, 10) + absorption_coefficient * dist) + TS - (NL - AG);
 
-					intensity = 1.0f / (1.0f + Mathf.Exp(-B * (intensity - i0)));
+					intensity = 1.0f / (1.0f + Mathf.Exp(-Contrast * (intensity - Brightness)));
 					// This will introduce noise to the image. 
 					if (enableNoise)
 					{   /// check with walter the correct formula
