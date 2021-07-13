@@ -185,4 +185,110 @@ public class SNRHelperFunctions : MonoBehaviour
         }
         return waveLength;
     }
+
+    /// <summary>
+    /// This function returns the PeriodicTime (time taken to complete one cycle of the transmission of signal from transducer)
+    /// the function will be further used to calculate the ActualPhysicalLengthofPulseinWater
+    /// http://www.fao.org/3/x5818e/x5818e04.htm#3.1.1%20time%20base
+    /// </summary>
+    /// <param name="frequency"></param>
+    /// <returns></returns>
+    public static float PeriodicTime(float frequency)
+    {
+        float periodicTime = 0.0f;
+        periodicTime = 1 / frequency;
+        return periodicTime; 
+    }
+
+    /// <summary>
+    /// This function calculates the actual physical length of pulse in water
+    /// this could be a target object or the aqua bed
+    /// The transducer updates at 40 Hz every second, I am assuming this is the number of cycles transmitted every second
+    /// </summary>
+    /// <param name="cycles">40 as per documentation</param>
+    /// <param name="frequency">2.1 Mhz </param>
+    /// <param name="velocity">1500 m/s </param>
+    /// <returns></returns>
+    public static float ActualPhysicalLengthofPulseinWater(int cycles, float frequency, float velocity)
+    {
+        
+        float pulseLengthinWater = 0.0f;
+        // We know the PeriodicTime 
+        // multiply the PeriodicTime times the number of cycles transmitted
+
+        float t = 0.0f; // measure for pulse duration
+        // if n cycles are transmitted, the pulse duration is 
+        // 40 * .47 10^-6
+        t = cycles * PeriodicTime(frequency);
+
+        // assuming acoustic waves travel at 1500 m/s in water, velocity will be 1500 m/s
+        // frequency is 2100000 Hz, and 40 cycles are transmitted every second
+        // we should have a pulse Length 0.0285714285714286 m
+        return pulseLengthinWater = t * velocity;
+    }
+
+    /// <summary>
+    /// Directivity index can be calculated based on the design of the transducer
+    /// Popular design of the face of transducer are 
+    /// 1. Omnidirectional, 2. Hemispherical, 3. Circular Face, 4. Rectangular Face
+    /// </summary>
+    /// <returns></returns>
+    public static float DirectivityIndex()
+    {
+
+        return 0.0f;
+    }
+
+    /// <summary>
+    /// This method defines the AcousticPowerOutput for a given electric input
+    /// We will need to know the transducer efficiency rpresented by (GreekSymbol eta)
+    /// </summary>
+    /// <param name="ETA">Transducer Efficiency obtained from manufacturer</param>
+    /// <param name="PE">Input electric power in watts to the transducer </param>
+    /// <returns></returns>
+    public static float AcousticPowerOutput(float ETA, float PE)
+    {
+        // Acoustic Power Output (WA) for a given 
+        // electric power input
+        float eta = ETA; // Transducer efficiency obtained from the manufacturer
+        float Pe = PE; // Electric input is measured as Watts
+        float WA = eta * PE;
+        return WA;
+    }
+
+    /// <summary>
+    /// Source Level is defined as 10 log (intensity of source/reference intensity)
+    /// SL = 170.8 + 10 log WA + DI dB/1 m Pa/1 m
+    /// </summary>
+    /// <returns></returns>
+    public static float SourceLevel(float ETA, float PE)
+    {
+        float SL = 0.0f;
+        float WA = AcousticPowerOutput(ETA, PE); // Acoustic Power Output Watt 
+        
+        // 170.8 is a constant for converting acoustic power to source level ( Urick (1975) p67)
+        SL = 170.8f + Mathf.Log10(WA) + DirectivityIndex();
+        return 0.0f;
+    }
+
+    /// <summary>
+    /// 2 way transmission loss for an echosounder is calculated based on target Distance and absorption coefficient
+    /// </summary>
+    /// <param name="targetDistance"></param>
+    /// <param name="absorption"></param> // we need to figure out the absorption in dB/km
+    /// <returns></returns>
+    public static float TwoWayTransmissionLoss(float targetDistance, float absorption)
+    {
+        float TL;
+        float TL1; // first component of Transmission Loss is 20Log(targetDistance)
+        float TL2; // second component of Transmission Loss is (alpha * targetDistance)
+
+        // first component of TransmissionLoss 
+        TL1 = 20 * Mathf.Log10(targetDistance);
+        TL2 = (absorption * targetDistance)/1000; // converting from dB/km to dB/m
+
+        TL = (2 * TL1) + (2 * TL2); // Add the components to calculate 2way transmission Loss
+        return TL;
+
+    }
 }
